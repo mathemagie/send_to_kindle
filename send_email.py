@@ -8,52 +8,87 @@ import datetime
 from dotenv import load_dotenv
 import logging
 import sys
+from pathlib import Path
 
 # Load environment variables
 load_dotenv()
 
-# Configure logging
+# Configure logging with more detailed format
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+    handlers=[logging.FileHandler("email_sender.log"), logging.StreamHandler()],
 )
 
+logger = logging.getLogger(__name__)
 
-def send_email(file):
+
+def send_email(file_path: str) -> bool:
     """
-    Sends an email with the provided line as the message content.
+    Sends an email with the provided PDF file as attachment.
 
     Args:
-        line (str): The line to be included in the email message.
-        env (str): The environment (staging or prod).
+        file_path (str): Path to the PDF file to be sent.
+
+    Returns:
+        bool: True if email was sent successfully, False otherwise.
     """
-    msg = MIMEMultipart()
+    try:
+        # Validate file exists and is PDF
+        file_path = Path(file_path)
+        if not file_path.exists():
+            logger.error(f"File not found: {file_path}")
+            return False
+        if file_path.suffix.lower() != ".pdf":
+            logger.error(f"File is not a PDF: {file_path}")
+            return False
 
-    msg[
-        "Subject"
-    ] = f"[IMPORTS] {datetime.date.today()} {datetime.datetime.now().time()}"
-    msg["From"] = "aurelien.fache@gmail.com"
-    msg["To"] = "aurelien.fache+kindle@kindle.com"
-    msg.attach(MIMEText("PDF attached"))
+        # Get email configuration from environment variables
+        sender_email = os.environ.get("SENDER_EMAIL")
+        recipient_email = os.environ.get("RECIPIENT_EMAIL")
+        smtp_server = os.environ.get("SMTP_SERVER", "in-v3.mailjet.com")
+        smtp_port = int(os.environ.get("SMTP_PORT", "587"))
 
-    with open(f"{file}", "rb") as attachment:
-        part = MIMEBase("application", "pdf")
-        part.set_payload(attachment.read())
-        encoders.encode_base64(part)
-        part.add_header(
-            "Content-Disposition",
-            f"attachment; filename={file}.pdf",
-        )
-        msg.attach(part)
+        if not all([sender_email, recipient_email]):
+            logger.error("Missing email configuration in environment variables")
+            return False
 
-    smtp_server = smtplib.SMTP("in-v3.mailjet.com", 587)
-    smtp_server.set_debuglevel(0)
-    smtp_server.starttls()
-    username = os.environ.get("MAILJET_USERNAME")
-    password = os.environ.get("MAILJET_PASSWORD")
-    smtp_server.login(username, password)
-    smtp_server.send_message(msg)
-    smtp_server.quit()
+        msg = MIMEMultipart()
+        msg["Subject"] = f"[PDF] {datetime.datetime.now().strftime('%Y-%m-%d %H:%M')}"
+        msg["From"] = sender_email
+        msg["To"] = recipient_email
+        msg.attach(MIMEText("PDF document attached"))
+
+        # Attach PDF file
+        with open(file_path, "rb") as attachment:
+            part = MIMEBase("application", "pdf")
+            part.set_payload(attachment.read())
+            encoders.encode_base64(part)
+            part.add_header(
+                "Content-Disposition",
+                f"attachment; filename={file_path.name}",
+            )
+            msg.attach(part)
+
+        # Send email
+        with smtplib.SMTP(smtp_server, smtp_port) as smtp:
+            smtp.starttls()
+            smtp.login(
+                os.environ.get("MAILJET_USERNAME"), os.environ.get("MAILJET_PASSWORD")
+            )
+            smtp.send_message(msg)
+            logger.info(f"Email sent successfully with attachment: {file_path.name}")
+            return True
+
+    except Exception as e:
+        logger.error(f"Failed to send email: {str(e)}", exc_info=True)
+        return False
 
 
 if __name__ == "__main__":
-    send_email(sys.argv[1])
+    if len(sys.argv) != 2:
+        logger.error("Usage: python send_email.py <pdf_file>")
+        sys.exit(1)
+
+    success = send_email(sys.argv[1])
+    sys.exit(0 if success else 1)
