@@ -2,12 +2,25 @@
 md2pdf==1.0.1
 WeasyPrint>=53.0
 markdown2>=2.4.0
+pdfkit>=1.0.0  # Alternative PDF generator
 
 # Email Handling
 secure-smtplib>=0.1.1
 
-# Environment Variables
+# Environment Variables and Configuration
 python-dotenv>=0.19.0
+pyyaml>=6.0.0  # For configuration files
 
-# Optional Dependencies
-Pillow>=8.0.0  # For image handling in PDFs 
+# Testing and Development
+pytest>=7.0.0
+black>=22.0.0  # Code formatting
+flake8>=4.0.0  # Code linting
+
+# Logging and Monitoring
+structlog>=22.0.0  # Better logging
+
+# Image Processing
+Pillow>=8.0.0  # For image handling in PDFs
+
+# Type Checking
+mypy>=0.950  # Optional static type checking
