@@ -11,14 +11,14 @@ body {
 
 /* Main heading styles */
 h1 {
-    font-size: 42px;
+    font-size: 44px;
     margin-bottom: 20px;
     text-align: center;
 }
 
 /* Secondary heading styles */
 h2 {
-    font-size: 29px;
+    font-size: 31px;
     margin-top: 20px;
     margin-bottom: 15px;
     color: #444;
@@ -26,7 +26,7 @@ h2 {
 
 /* Paragraph styles */
 p {
-    font-size: 23px;
+    font-size: 25px;
     margin-bottom: 15px;
 }
 
