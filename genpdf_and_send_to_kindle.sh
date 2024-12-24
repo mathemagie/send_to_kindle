@@ -1,6 +1,6 @@
 #!/bin/bash
 
-file="agent.md"
+file="antro.md"
 # Format: YYYYMMDD_HHMM
 timestamp=$(date "+%Y%m%d_%H%M")
 pdf_file="test_${timestamp}.pdf"
